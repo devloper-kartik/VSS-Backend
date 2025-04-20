@@ -127,7 +127,10 @@ exports.Showorderdetails = async (req, res) => {
 
             return {
               ...product,
-              Batch_Number: product.Batch_Number || stock?.batch_number || [],
+              Batch_Number:
+                product.Batch_Number.length > 0
+                  ? product.Batch_Number
+                  : stock?.batch_number || [],
               totalWeight: stock.weight,
             };
           })
