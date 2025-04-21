@@ -108,7 +108,6 @@ const Production_incharge = require("./models/Stock_M.js");
 app.use("/record", record);
 app.get("/exit", (req, res) => {
   const { value } = req.query;
-  console.log(value, value === "true");
   if (value === "true") {
     server.close();
   } else {
