@@ -97,7 +97,9 @@ eventEmitter.on("Complete", async ({ DispatchPerson, orderId }) => {
 
 exports.Showorderdetails = async (req, res) => {
   try {
-    const orderDeatils = await SalesManager.find({}).populate({
+    const orderDeatils = await SalesManager.find({
+      Order_mark: "Complete",
+    }).populate({
       path: "db_id",
       select: "_id UserName",
     });
@@ -107,15 +109,20 @@ exports.Showorderdetails = async (req, res) => {
       });
     }
 
-    let filterOrdermark = orderDeatils.filter(
-      (item) => item.Order_mark === "Complete"
-    );
+    let filterOrdermark = orderDeatils.filter((item) => {
+      const products = item.products.filter(
+        (product) => product.dispatchManager.length
+      );
+      return products.length;
+    });
 
     filterOrdermark = await Promise.all(
       filterOrdermark.map(async (o) => {
         const order = o.toJSON();
-        const products = await Promise.all(
+        let products = await Promise.all(
           order.products.map(async (product) => {
+            if (!product.dispatchManager.length) return null;
+
             const stock = await stocks.findOne({
               company: product.company,
               grade: product.grade,
@@ -135,6 +142,8 @@ exports.Showorderdetails = async (req, res) => {
             };
           })
         );
+
+        products = products.filter(Boolean);
 
         return { ...order, products };
       })

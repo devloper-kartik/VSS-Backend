@@ -1,6 +1,4 @@
-const sales = require("../models/sales");
 const salesorder = require("../models/sales");
-var ISODate = require("isodate");
 const moment = require("moment");
 
 exports.Billing = async (req, res) => {

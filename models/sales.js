@@ -92,7 +92,7 @@ const saleSchema = new Schema(
         },
         company: {
           type: String, //,
-              //  required: true
+          //  required: true
         },
         grade: {
           type: String, //,
@@ -180,6 +180,20 @@ const saleSchema = new Schema(
         Batch_Number: [
           {
             type: String,
+          },
+        ],
+        dispatchManager: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "mobile",
+            default: [],
+          },
+        ],
+        productionincharge: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "mobile",
+            default: [],
           },
         ],
       },

@@ -346,7 +346,7 @@ eventEmitter.on("OrderAccepted", async ({ orderId, sales_id }) => {
 
 exports.showOrderDetails = async (req, res) => {
   try {
-    const newOrderDetails = await OrderDetails.find()
+    const newOrderDetails = await OrderDetails.find({ orderstatus: "Accepted" })
       .select({ pdf_order: false })
       .populate({
         path: "productionincharge",
@@ -359,8 +359,7 @@ exports.showOrderDetails = async (req, res) => {
 
     // Filter orders with 'Accepted' status and production incharge matches Finddata
     let acceptedOrders = newOrderDetails.filter(
-      (order) =>
-        order.orderstatus === "Accepted" && order.productionincharge.length > 0
+      (order) => order.productionincharge.length
     );
 
     if (!acceptedOrders.length)
@@ -370,9 +369,9 @@ exports.showOrderDetails = async (req, res) => {
 
     acceptedOrders = await Promise.all(
       acceptedOrders.map(async (order) => {
-        const products = await Promise.all(
+        let products = await Promise.all(
           order.products.map(async (product) => {
-            if (product.Batch_Number.length > 0) return product;
+            if (!product.productionincharge.length) return null;
 
             const stock = await stocks.findOne({
               company: product.company,
@@ -385,10 +384,15 @@ exports.showOrderDetails = async (req, res) => {
 
             return {
               ...product.toJSON(),
-              Batch_Number: stock?.batch_number || [],
+              Batch_Number:
+                product.Batch_Number.length > 0
+                  ? product.Batch_Number
+                  : stock?.batch_number || [],
             };
           })
         );
+
+        products = products.filter(Boolean);
 
         return { ...order.toJSON(), products };
       })

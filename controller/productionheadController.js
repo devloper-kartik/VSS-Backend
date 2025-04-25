@@ -1,14 +1,9 @@
 const productionSchema = require("../models/productionhead");
 const purchase = require("../models/purchaseStockSchema");
-const orderdetails = require("../models/sales");
 const mongoose = require("mongoose");
-const { notify } = require("../routes/productionhead");
-const sales = require("../models/sales");
 const eventEmitter = require("../utils/eventEmitter");
 const SalesManager = require("../models/sales");
 const Moblie = require("../models/mobile");
-// const redisClient = require('../config/redis')
-const { promisify } = require("util");
 
 // Assuming redisClient is already created and connected elsewhere in your code
 // Example: const redisClient = redis.createClient();
@@ -64,7 +59,7 @@ exports.checkorder = async (req, res) => {
     const UpdateId = req.params.id;
 
     // Find the order by orderId
-    const orderDetails = await orderdetails.findById(UpdateId);
+    const orderDetails = await SalesManager.findById(UpdateId);
 
     // Check if the orderDetails is not null
     if (!orderDetails) {
@@ -108,7 +103,7 @@ exports.checkorder = async (req, res) => {
 async function notifysalesManager(orderId, eventType) {
   try {
     // Use findOne to find the order details by orderId
-    const orderDetails = await orderdetails.findOne({ orderId: orderId });
+    const orderDetails = await SalesManager.findOne({ orderId: orderId });
 
     if (!orderDetails) {
       console.error("Order not found for orderId:", orderId);
@@ -117,7 +112,7 @@ async function notifysalesManager(orderId, eventType) {
 
     // Use the sales_id from orderDetails to fetch the sales person
     const salesPersonId = orderDetails.sales_id;
-    const salesPerson = await orderdetails.findOne({ sales_id: salesPersonId });
+    const salesPerson = await SalesManager.findOne({ sales_id: salesPersonId });
 
     console.log("salesPerson data is", salesPerson);
 
@@ -256,22 +251,29 @@ exports.EditOrder = async (req, res) => {
     const findsalesOrder = await SalesManager.findById(req.params.id);
     if (!findsalesOrder) return res.status(404).json("Sales order not found");
 
-    const manager = await Moblie.findById(req.body.ProductionIncharge);
+    const { ProductionIncharge, productId } = req.body;
+
+    const manager = await Moblie.findById(ProductionIncharge);
 
     const allowedRoles = ["Dispatchmanager", "ProductionIncharge"];
     if (!allowedRoles.includes(manager?.Role))
       return res.status(404).json("Invalid Role");
 
-    const updatesalesOrder = await SalesManager.findByIdAndUpdate(
-      findsalesOrder._id,
-      {
-        $set: {
-          [manager.Role === "ProductionIncharge"
-            ? "productionincharge"
-            : "dispatchManager"]: manager._id,
-        },
-      }
-    );
+    if (manager.Role === "ProductionIncharge")
+      findsalesOrder.productionincharge = manager._id;
+    else findsalesOrder.dispatchManager = manager._id;
+
+    findsalesOrder.products = findsalesOrder.products.map((product) => {
+      if (product._id !== productId) return product;
+
+      if (manager.Role === "ProductionIncharge")
+        product.productionincharge = manager._id;
+      else product.dispatchManager = manager._id;
+
+      return product;
+    });
+
+    const updatesalesOrder = await findsalesOrder.save();
 
     res.status(200).json({ updatedData: updatesalesOrder });
   } catch (error) {
