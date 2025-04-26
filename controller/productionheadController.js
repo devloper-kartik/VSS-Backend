@@ -260,11 +260,11 @@ exports.EditOrder = async (req, res) => {
       return res.status(404).json("Invalid Role");
 
     if (manager.Role === "ProductionIncharge")
-      findsalesOrder.productionincharge = manager._id;
-    else findsalesOrder.dispatchManager = manager._id;
+      findsalesOrder.productionincharge = [manager._id];
+    else findsalesOrder.dispatchManager = [manager._id];
 
     findsalesOrder.products = findsalesOrder.products.map((product) => {
-      if (product._id !== productId) return product;
+      if (product._id.toString() !== productId) return product;
 
       if (manager.Role === "ProductionIncharge")
         product.productionincharge = [manager._id];
@@ -272,6 +272,8 @@ exports.EditOrder = async (req, res) => {
 
       return product;
     });
+
+    // console.log(findsalesOrder);
 
     const updatesalesOrder = await findsalesOrder.save();
 

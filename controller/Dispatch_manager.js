@@ -149,6 +149,8 @@ exports.Showorderdetails = async (req, res) => {
       })
     );
 
+    filterOrdermark = filterOrdermark.filter((item) => item.products.length);
+
     res.status(200).json({
       orderDeatils: filterOrdermark,
     });

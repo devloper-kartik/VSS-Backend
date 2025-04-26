@@ -398,6 +398,10 @@ exports.showOrderDetails = async (req, res) => {
       })
     );
 
+    acceptedOrders = acceptedOrders.filter(
+      (order) => order.productionincharge.length
+    );
+
     return res.status(200).json({ orderDetails: acceptedOrders });
   } catch (error) {
     console.error("Error in showOrderDetails:", error);
