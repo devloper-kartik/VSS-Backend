@@ -267,8 +267,8 @@ exports.EditOrder = async (req, res) => {
       if (product._id !== productId) return product;
 
       if (manager.Role === "ProductionIncharge")
-        product.productionincharge = manager._id;
-      else product.dispatchManager = manager._id;
+        product.productionincharge = [manager._id];
+      else product.dispatchManager = [manager._id];
 
       return product;
     });
