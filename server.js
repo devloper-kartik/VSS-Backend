@@ -134,7 +134,6 @@ function verifyToken(req, res, next) {
     res.sendStatus(403);
   }
 }
-console.log({ PORT: process.env.PORT });
 
 const server = app.listen(process.env.PORT, { useUnifiedTopology: true }, () =>
   console.log(`server has started at port ${process.env.PORT}`)
