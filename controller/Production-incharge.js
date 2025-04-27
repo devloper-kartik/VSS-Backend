@@ -398,9 +398,7 @@ exports.showOrderDetails = async (req, res) => {
       })
     );
 
-    acceptedOrders = acceptedOrders.filter(
-      (order) => order.productionincharge.length
-    );
+    acceptedOrders = acceptedOrders.filter((order) => order.products.length);
 
     return res.status(200).json({ orderDetails: acceptedOrders });
   } catch (error) {
