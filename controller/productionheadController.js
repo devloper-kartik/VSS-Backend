@@ -253,6 +253,8 @@ exports.EditOrder = async (req, res) => {
 
     const { ProductionIncharge, productId } = req.body;
 
+    if(!ProductionIncharge || !productId) return res.status(404).json("Wrong payload")
+
     const manager = await Moblie.findById(ProductionIncharge);
 
     const allowedRoles = ["Dispatchmanager", "ProductionIncharge"];
