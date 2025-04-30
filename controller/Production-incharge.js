@@ -6,7 +6,7 @@ const salesorder = require("../models/sales"); // Assuming salesorder is the cor
 const stocks = require("../models/Stock_M");
 const sales = require("../models/sales");
 const mongoose = require("mongoose");
-
+const Mobilelogin = require("../models/mobile");
 const { ObjectId } = require("mongodb"); // Import ObjectId from mongodb package
 
 exports.getstocksdata = async (req, res) => {
@@ -144,8 +144,6 @@ exports.editStocks = async (req, res) => {
         { new: true }
       );
 
-      console.log("Updated stock:", updatedData);
-
       // Send a success response after processing
       return res.status(200).json({
         message: "Stock weight updated successfully",
@@ -220,6 +218,8 @@ exports.getBatchWeight = async (req, res) => {
     const stockEntries = await stocks.find({
       "batch_details.batchNumber": { $in: batch_numbers },
     });
+
+    console.log(stockEntries);
 
     if (!stockEntries.length) {
       return res
@@ -622,26 +622,32 @@ async function notifyDispatchManager(orderId, eventType) {
       console.error("Order is not found for orderId", orderId);
       return;
     }
-    // Use the Dispatch_manager to fetch the Dispatch persons
-    const DispatchIds = orderCheck.db_id;
-    console.log("DispatchIds is", DispatchIds);
 
-    const DispatchPersons = await salesorder.find({
-      db_id: { $in: DispatchIds },
+    const getData = await Mobilelogin.find({
+      Role: { $in: ["Dispatchmanager"] },
     });
-    console.log("DispatchPersons when Emit", DispatchPersons);
+
+    const dispatchManager = getData.map((manager) => manager._id);
+
+    orderCheck.products = orderCheck.products.map((product) => ({
+      ...product,
+      dispatchManager,
+    }));
+
+    orderCheck.dispatchManager = dispatchManager;
+
+    await orderCheck.save();
 
     // Assuming you want to notify each dispatch person individually
-    for (const dispatchPerson of DispatchPersons) {
+    for (const dispatchPerson of getData) {
       if (eventType === "Complete") {
-        const dataEmit = eventEmitter.emit("Complete", {
-          DispatchPerson: dispatchPerson,
+        eventEmitter.emit("Complete", {
+          DispatchPerson: dispatchPerson._id,
           orderId,
         });
-        console.log("data Emit is", dataEmit);
       } else if (eventType === "waiting") {
-        const dataEmit = eventEmitter.emit("waiting", {
-          DispatchPerson: dispatchPerson,
+        eventEmitter.emit("waiting", {
+          DispatchPerson: dispatchPerson._id,
           orderId,
         });
         console.log("Data Emit is", dataEmit);

@@ -77,18 +77,16 @@ async function sendPushNotification(deviceToken, message) {
 // Listen for 'Complete' event
 eventEmitter.on("Complete", async ({ DispatchPerson, orderId }) => {
   try {
-    // Extract db_id from DispatchPerson
-    const { db_id } = DispatchPerson;
     const deviceToken = "token"; // Replace with your actual device token
 
     console.log(
-      `Order is Completed, Please Pick Up the order for Dispatch Manager with db_id: ${db_id}, with OrderId ${orderId}`
+      `Order is Completed, Please Pick Up the order for Dispatch Manager with db_id: ${DispatchPerson}, with OrderId ${orderId}`
     );
 
     // Additional logic related to notifying the dispatch manager can be added here
 
     // Send FCM notification to the specified device token
-    const message = `Order is Completed, Please Pick Up the order for Dispatch Manager with Id: ${db_id} with OrderId: ${orderId}`;
+    const message = `Order is Completed, Please Pick Up the order for Dispatch Manager with Id: ${DispatchPerson} with OrderId: ${orderId}`;
     await sendPushNotification(deviceToken, message);
   } catch (error) {
     console.error("Error handling Complete event:", error);
