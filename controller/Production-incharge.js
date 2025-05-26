@@ -12,8 +12,6 @@ const { ObjectId } = require("mongodb"); // Import ObjectId from mongodb package
 exports.getstocksdata = async (req, res) => {
   try {
     const ProductId = req.query.id;
-    console.log(ProductId);
-
     // Assuming 'stocks' is your MongoDB model
     const newgetstocks = await stocks.aggregate([
       {

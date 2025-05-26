@@ -5,6 +5,7 @@ const serviceAccount = require("../config/fcm.json");
 const { findOneAndUpdate } = require("../models/Inventory");
 const moment = require("moment");
 const stocks = require("../models/Stock_M");
+const Moblie = require("../models/mobile");
 
 // Check if Firebase Admin SDK is already initialized
 if (!admin.apps.length) {
@@ -130,6 +131,20 @@ exports.Showorderdetails = async (req, res) => {
               guardfilm: product.guardfilm,
             });
 
+            const dispatchManagers = await Moblie.findOne(
+              {
+                _id: { $in: product.dispatchManager },
+              },
+              "UserName LastName ProfileImage"
+            );
+
+            const productionIncharges = await Moblie.findOne(
+              {
+                _id: { $in: product?.productionincharge || [] },
+              },
+              "UserName LastName ProfileImage"
+            );
+
             return {
               ...product,
               Batch_Number:
@@ -137,6 +152,8 @@ exports.Showorderdetails = async (req, res) => {
                   ? product.Batch_Number
                   : stock?.batch_number || [],
               totalWeight: stock.weight,
+              dispatchManagers: dispatchManagers,
+              productionIncharges: productionIncharges,
             };
           })
         );
@@ -153,6 +170,8 @@ exports.Showorderdetails = async (req, res) => {
       orderDeatils: filterOrdermark,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       message: error,
     });
