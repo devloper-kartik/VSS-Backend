@@ -137,12 +137,45 @@ async function notifysalesManager(orderId, eventType) {
 
 exports.checkOrderDetails = async (req, res) => {
   try {
-    const finddetails = await SalesManager.find({})
+    let finddetails = await SalesManager.find({})
       .populate({
         path: "productionincharge",
         select: "_id UserName", // Specify the fields you want to include from the 'productionincharge' collection
       })
       .sort({ currentDate: -1 });
+
+    finddetails = await Promise.all(
+      finddetails.map(async (finddetail) => {
+        const order = finddetail.toJSON();
+
+        const newProduct = await Promise.all(
+          order.products.map(async (product) => {
+            const dispatchManagers = await Moblie.findOne(
+              {
+                _id: { $in: product.dispatchManager || [] },
+              },
+              "UserName LastName ProfileImage"
+            );
+
+            const productionIncharges = await Moblie.findOne(
+              {
+                _id: { $in: product?.productionincharge || [] },
+              },
+              "UserName LastName ProfileImage"
+            );
+
+            return {
+              ...product,
+              dispatchManager: dispatchManagers,
+              productionincharge: productionIncharges,
+            };
+          })
+        );
+
+        return { ...order, products: newProduct };
+      })
+    );
+
     res.status(200).json({
       message: "Order Details is shows",
       orderdetails: finddetails,
@@ -253,7 +286,8 @@ exports.EditOrder = async (req, res) => {
 
     const { ProductionIncharge, productId } = req.body;
 
-    if(!ProductionIncharge || !productId) return res.status(404).json("Wrong payload")
+    if (!ProductionIncharge || !productId)
+      return res.status(404).json("Wrong payload");
 
     const manager = await Moblie.findById(ProductionIncharge);
 

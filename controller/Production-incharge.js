@@ -386,6 +386,7 @@ exports.showOrderDetails = async (req, res) => {
                 product.Batch_Number.length > 0
                   ? product.Batch_Number
                   : stock?.batch_number || [],
+              orderDone: product.dispatchManager.length > 0 ? true : false,
             };
           })
         );
