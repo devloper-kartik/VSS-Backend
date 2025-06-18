@@ -151,7 +151,7 @@ exports.Showorderdetails = async (req, res) => {
                 product.Batch_Number.length > 0
                   ? product.Batch_Number
                   : stock?.batch_number || [],
-              totalWeight: stock.weight,
+              totalWeight: stock?.weight,
               dispatchManagers: dispatchManagers,
               productionIncharges: productionIncharges,
             };
