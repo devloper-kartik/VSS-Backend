@@ -658,3 +658,68 @@ async function notifyDispatchManager(orderId, eventType) {
     console.error("Error in notifyDispatchManager:", error);
   }
 }
+
+// Update stock weight by product id (matching product fields)
+exports.editStockByProductId = async (req, res) => {
+  try {
+    const productId = req.params.product_id;
+    const requestedWeight = req.body.weight;
+
+    // 1. Find the order that contains this productId
+    const order = await salesorder.findOne({ "products.productId": productId });
+    if (!order) {
+      return res.status(404).json({ message: "No order found containing the provided product id" });
+    }
+
+    // 2. Find the product in the order
+    const product = order.products.find(p => p.productId.toString() === productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found in the order" });
+    }
+
+    // 3. Extract fields to match stock
+    const {
+      company,
+      grade,
+      topcolor,
+      coating,
+      temper,
+      guardfilm
+    } = product;
+
+    // 4. Find the stock with matching fields
+    const stockData = await stocks.findOne({
+      company,
+      grade,
+      topcolor,
+      coating,
+      temper,
+      guardfilm
+    });
+
+    if (!stockData) {
+      return res.status(404).json({ message: "No stock found matching the product details" });
+    }
+
+    const existingWeight = stockData.weight;
+
+    // 5. Validate requested weight
+    if (requestedWeight > existingWeight) {
+      return res.status(400).json({
+        message: `Requested weight (${requestedWeight} kg) exceeds available stock weight (${existingWeight} kg) for the matched stock`,
+      });
+    }
+
+    // 6. Update the stock's weight
+    stockData.weight = existingWeight - requestedWeight;
+    const updatedStock = await stockData.save();
+
+    return res.status(200).json({
+      message: "Stock weight updated successfully",
+      updatedStock,
+    });
+  } catch (error) {
+    console.error("Error updating stock by product id:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
