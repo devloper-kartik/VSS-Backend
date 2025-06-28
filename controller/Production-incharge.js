@@ -665,58 +665,66 @@ exports.editStockByProductId = async (req, res) => {
     const productId = req.params.product_id;
     const requestedWeight = req.body.weight;
 
-    // 1. Find the order that contains this productId
-    const order = await salesorder.findOne({ "products.productId": productId });
-    if (!order) {
-      return res.status(404).json({ message: "No order found containing the provided product id" });
-    }
-
-    // 2. Find the product in the order
-    const product = order.products.find(p => p.productId.toString() === productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found in the order" });
-    }
-
-    // 3. Extract fields to match stock
-    const {
-      company,
-      grade,
-      topcolor,
-      coating,
-      temper,
-      guardfilm
-    } = product;
-
-    // 4. Find the stock with matching fields
-    const stockData = await stocks.findOne({
-      company,
-      grade,
-      topcolor,
-      coating,
-      temper,
-      guardfilm
+    const orderDetails = await OrderDetails.findOne({
+      "products._id": productId,
     });
 
-    if (!stockData) {
-      return res.status(404).json({ message: "No stock found matching the product details" });
+    const product = orderDetails?.products?.find(
+      (p) => p._id.toString() === productId
+    );
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ message: "Product not found in the order" });
     }
 
-    const existingWeight = stockData.weight;
+    let findData;
+    findData = await stocks.findOne({
+      batch_number: { $in: product.Batch_Number || [] },
+    });
 
-    // 5. Validate requested weight
-    if (requestedWeight > existingWeight) {
-      return res.status(400).json({
-        message: `Requested weight (${requestedWeight} kg) exceeds available stock weight (${existingWeight} kg) for the matched stock`,
+    if (!findData) {
+      const { company, grade, topcolor, coating, temper, guardfilm } = product;
+
+      // 4. Find the stock with matching fields
+      findData = await stocks.findOne({
+        company,
+        grade,
+        topcolor,
+        coating,
+        temper,
+        guardfilm,
       });
     }
 
-    // 6. Update the stock's weight
-    stockData.weight = existingWeight - requestedWeight;
-    const updatedStock = await stockData.save();
+    if (!findData) {
+      return res.status(404).json({ message: "Stock not found" });
+    }
 
+    const existingWeight = findData?.weight || 0;
+
+    // Validate requested weight
+    if (requestedWeight > existingWeight) {
+      return res.status(400).json({
+        message: `Requested weight (${requestedWeight} kg) exceeds available stock weight (${existingWeight} kg)`,
+      });
+    }
+
+    // Calculate the remaining weight for the original stock
+    const remainingWeight = existingWeight - requestedWeight;
+
+    // Update the original stock's weight
+    const updatedData = await stocks.findOneAndUpdate(
+      { _id: findData._id },
+      { $set: { weight: remainingWeight } },
+      { new: true }
+    );
+
+    // Send a success response after processing
     return res.status(200).json({
       message: "Stock weight updated successfully",
-      updatedStock,
+      updatedStock: updatedData,
     });
   } catch (error) {
     console.error("Error updating stock by product id:", error);

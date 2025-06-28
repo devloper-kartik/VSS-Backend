@@ -12,5 +12,5 @@ router.patch('/pickup', Production_Incahrge.pickup)
 router.patch('/assignDispatchManager/:id',Production_Incahrge.AssignOrder)  
 router.post('/editbatch/:batch_number' ,Production_Incahrge.checkBatchWeight )
 router.get('/checkBatchWeight/:batch_number' , Production_Incahrge.getBatchWeight)
-router.patch('/editstockbyproductid/:product_id', Production_Incahrge.editStockByProductId)
+router.put('/editstockbyproductid/:product_id', Production_Incahrge.editStockByProductId)
 module.exports=router
