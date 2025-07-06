@@ -731,3 +731,69 @@ exports.editStockByProductId = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Get batch number by product ID
+exports.getBatchNumberByProductId = async (req, res) => {
+  try {
+    const productId = req.params.product_id;
+
+    // First, find the product in the order details
+    const orderDetails = await OrderDetails.findOne({
+      "products._id": productId,
+    });
+
+    if (!orderDetails) {
+      return res.status(404).json({ 
+        message: "Product not found in any order" 
+      });
+    }
+
+    // Find the specific product in the order
+    const product = orderDetails.products.find(
+      (p) => p._id.toString() === productId
+    );
+
+    if (!product) {
+      return res.status(404).json({ 
+        message: "Product not found in the order" 
+      });
+    }
+
+    // If the product already has batch numbers assigned, return them
+    if (product.Batch_Number && product.Batch_Number.length > 0) {
+      return res.status(200).json({
+        message: "Batch numbers found for the product",
+        batchNumbers: product.Batch_Number,
+      });
+    }
+
+    // If no batch numbers are assigned, find matching stock and return its batch number
+    const { company, grade, topcolor, coating, temper, guardfilm } = product;
+
+    const stockData = await stocks.findOne({
+      company,
+      grade,
+      topcolor,
+      coating,
+      temper,
+      guardfilm,
+    });
+
+    if (!stockData) {
+      return res.status(404).json({ 
+        message: "No matching stock found for this product" 
+      });
+    }
+
+    return res.status(200).json({
+      message: "Batch numbers found from stock data",
+      batchNumbers: stockData.batch_number || [],
+    });
+
+  } catch (error) {
+    console.error("Error getting batch number by product ID:", error);
+    res.status(500).json({ 
+      error: error.message 
+    });
+  }
+};
