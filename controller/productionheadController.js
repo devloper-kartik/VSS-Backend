@@ -166,8 +166,7 @@ exports.checkOrderDetails = async (req, res) => {
 
             return {
               ...product,
-              dispatchManager: dispatchManagers,
-              productionincharge: productionIncharges,
+              productionincharge: productionIncharges || dispatchManagers,
             };
           })
         );
